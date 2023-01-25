@@ -12,7 +12,7 @@ if (typeof window._twitchChatDanmaku === 'undefined') {
 		const { danmakuDensity, fontSize } = settings;
 		const percent = ((+danmakuDensity || 0) + 1) / 4;
 		const lineHeight = fontSize * 1.2;
-		const containerHeight = $container.offsetHeight;
+		const containerHeight = $container.offsetHeight || 480;
 		maxStack = Math.floor(containerHeight / lineHeight * percent);
 	}
 
@@ -33,7 +33,7 @@ if (typeof window._twitchChatDanmaku === 'undefined') {
 			}
 		}
 		if ($chat) {
-			if(!stacks[min]) {
+			if (!stacks[min]) {
 				stacks[min] = [];
 			}
 			stacks[min].push($chat);
@@ -55,6 +55,8 @@ if (typeof window._twitchChatDanmaku === 'undefined') {
 
 			if (!enabled) {
 				$container.style.setProperty('display', 'none');
+				stacks = [];
+				$container.innerHTML = '';
 			} else {
 				$container.style.removeProperty('display');
 			}
@@ -94,6 +96,8 @@ if (typeof window._twitchChatDanmaku === 'undefined') {
 		},
 
 		onDanmaku($username, $message) {
+			if (!settings?.enabled) return;
+			if ($message.querySelector('.chat-line__message--deleted-notice')) return;
 			const $chat = document.createElement('div');
 			$chat.classList.add('danmaku-chat');
 
@@ -108,8 +112,9 @@ if (typeof window._twitchChatDanmaku === 'undefined') {
 			$chat.appendChild($messageContainer);
 
 			$chat.addEventListener('animationend', () => $chat.remove());
-			const stack = getProperStack($chat);
-			
+
+			const stack = getProperStack($chat) || 0;
+
 			$container.appendChild($chat);
 
 			const BIAS = 0.5;
@@ -119,8 +124,8 @@ if (typeof window._twitchChatDanmaku === 'undefined') {
 				$chat.style.setProperty('--length', length);
 
 				setTimeout(() => {
-					stacks[stack] = stacks[stack].filter($c => $c !== $chat);
-				}, settings.duration * (length + 1) * 1000 * 0.7)
+					stacks[stack] = stacks[stack]?.filter($c => $c !== $chat) || [];
+				}, settings.duration * Math.max(length * 1.5, 0.5) * 1000)
 			}, 0);
 		}
 	};
